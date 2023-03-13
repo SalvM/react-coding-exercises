@@ -11,3 +11,14 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+#tris__board_container {
+  max-width: 258px;
+  justify-content: center;
+}
+#tris__board_container button {
+  width: 78px;
+  height: 78px;
+  margin: 4px;
+  font-size: 2rem;
+}
