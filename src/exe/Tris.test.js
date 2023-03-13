@@ -66,4 +66,34 @@ describe('Tris', () => {
         fireEvent.click(buttons[3]);
         expect(buttons[3]).toHaveTextContent('o');
     });
+    it('finishs when all the buttons have been pressed and resets', () => {
+        render(<Tris />);
+        const buttons = screen.getAllByRole('button');
+
+        fireEvent.click(buttons[0]);
+        fireEvent.click(buttons[1]);    
+        fireEvent.click(buttons[4]);
+        fireEvent.click(buttons[8]);
+        fireEvent.click(buttons[3]);
+        fireEvent.click(buttons[5]);
+        fireEvent.click(buttons[2]);
+        fireEvent.click(buttons[6]);
+        fireEvent.click(buttons[7]);
+
+        const resetButton = screen.getByTestId('reset_button')
+        expect(resetButton).toBeInTheDocument();
+        fireEvent.click(resetButton);
+        expect(resetButton).not.toBeInTheDocument();
+    });
+    it('tells the winner', () => {
+        render(<Tris />);
+        const buttons = screen.getAllByRole('button');
+
+        fireEvent.click(buttons[0]);
+        fireEvent.click(buttons[3]);    
+        fireEvent.click(buttons[1]);    
+        fireEvent.click(buttons[4]);    
+        fireEvent.click(buttons[2]);    
+        expect(screen.getByTestId('winner_text')).toBeInTheDocument();
+    })
 });
