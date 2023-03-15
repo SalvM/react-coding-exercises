@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Box, Container, IconButton, InputBase, Paper, Stack, nTextField, Typography } from "@mui/material";
+import { Autocomplete, Box, Container, CircularProgress, Paper, Stack, TextField, Typography } from "@mui/material";
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
-import SearchIcon from '@mui/icons-material/Search';
 import { styled } from '@mui/material/styles';
 
 const Item = styled(Paper)(({ theme }) => ({
@@ -26,7 +25,7 @@ const BorderLinearProgress = styled(LinearProgress)(({ theme }) => ({
 const Pokedex = () => {
     const [pokemon, setPokemon] = useState(null);
     const [pokemonList, setPokemonList] = useState(null);
-    const [query, setQuery] = useState('');
+    const [isFetching, setIsFetching] = useState(false);
 
     const loadPokédex = async () => {
         try {
@@ -41,16 +40,63 @@ const Pokedex = () => {
     }
 
     const loadPokémon = async (query) => {
+        if (!(query && query.length)) return;
+        if (isFetching) return;
+        setIsFetching(true)
         try {
             const rawResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${query}`);
-            if (!rawResponse.ok) throw rawResponse;
+            if (!rawResponse?.ok) throw rawResponse;
             const responseBody = await rawResponse.json();
             setPokemon(responseBody)
             return responseBody;
         } catch(e) {
             console.error('[Pokédex] loadPokémon', e);
             return null;
+        } finally {
+            setIsFetching(false)
         }
+    }
+
+    const pokemonAutocompleteOptions = useMemo(() => {
+        return pokemonList?.map(p => p.name);
+    }, [pokemonList]);
+
+    // The useful data used to render
+    const pokemonData = useMemo(() => {
+        const types = pokemon?.types?.map(t => t.type.name);
+        const stats = pokemon?.stats?.map(s => ({ name: s.stat.name, value: s.base_stat }));
+      
+        return { types, stats };
+      }, [pokemon]);
+      
+    const renderPokemonTypes = useMemo(() => {
+        return pokemonData?.types?.map(type => (<Item>{type}</Item>));
+    }, [pokemonData?.types]);
+
+    const renderPokemonStats = useMemo(() => {
+        return (
+            pokemonData?.stats?.map(stat => (
+                <Item>
+                    <Typography variant="body1" style={{textAlign: 'left'}}>{stat?.name} : {stat?.value}</Typography>
+                    <BorderLinearProgress variant="determinate" value={stat?.value / 2}/>
+                </Item>
+            ))
+        )
+    }, [pokemonData?.stats])
+
+    const renderPokedexDisplay = (_pokemon) => {
+        if (isFetching) {
+            return (<CircularProgress />)
+        }
+        if (_pokemon) {
+            return (
+                <>
+                    <img id="pokemon-img" data-testid="pokemon-img" src={_pokemon?.sprites?.front_default} alt={_pokemon?.name} />
+                    <Typography variant="body1">#{_pokemon?.id}</Typography>
+                </>
+            )
+        }
+        return (<Typography variant="body1">Please, submit a pokémon!</Typography>)
     }
 
     const renderPokemonData = (_pokemon) => {
@@ -70,7 +116,7 @@ const Pokedex = () => {
                         spacing={1}
                     >
                         {
-                            _pokemon?.types?.map(t => (<Item>{t?.type?.name}</Item>))
+                           renderPokemonTypes
                         }
                     </Stack>
                     <Stack
@@ -80,12 +126,7 @@ const Pokedex = () => {
                         spacing={1}
                     >
                         {
-                            _pokemon?.stats?.map(s => (
-                                <Item>
-                                    <Typography variant="body1" style={{textAlign: 'left'}}>{s?.stat?.name} : {s?.base_stat}</Typography>
-                                    <BorderLinearProgress variant="determinate" value={s?.base_stat / 2}/>
-                                </Item>
-                            ))
+                            renderPokemonStats
                         }
                     </Stack>
                 </Stack>
@@ -104,7 +145,10 @@ const Pokedex = () => {
 
     return (
         <Container>
-            <Box sx={{ bgcolor: '#cfe8fc', height: '100vh' }} style={{flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+            <Box
+                sx={{ bgcolor: '#cfe8fc', height: '100vh' }}
+                style={{flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}
+            >
                 <Typography variant="h1">
                     Pokédex
                 </Typography>
@@ -113,20 +157,17 @@ const Pokedex = () => {
                     sx={{width: 300, minHeight: 600, backgroundColor: '#c50e0e', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                     m={12} py={8} px={4}
                 >
-                    <Box sx={{backgroundColor: 'white', borderRadius: 2, display: 'flex', alignItems: 'center'}} px={2} m={2}>
-                        <InputBase
-                            id="pokedex-query"
-                            fullWidth
-                            label="Pokémon"
-                            placeholder="Which Pokémon?"
-                            inputProps={{ 'aria-label': 'search pokémon' }}
-                            data-testid="pokedex-query"
-                            autoFocus
-                            onChange={e => loadPokémon(e.target.value)}
+                    <Box sx={{backgroundColor: 'white', borderRadius: 2, display: 'flex', alignItems: 'center', width: 250}} px={2} m={2}>
+                        <Autocomplete
+                            disablePortal
+                            id="pokedex-combo"
+                            data-testid="pokedex-combo"
+                            options={pokemonAutocompleteOptions || []}
+                            renderInput={(params) => <TextField {...params}>{params.name}</TextField>}
+                            onChange={(e, v) => loadPokémon(v)}
+                            noOptionsText={"No Pokèmon found"}
+                            sx={{width: '100%'}}
                         />
-                         <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
-                            <SearchIcon />
-                        </IconButton>
                     </Box>
                     <Box
                         sx={{
@@ -144,21 +185,14 @@ const Pokedex = () => {
                         m={0} 
                         p={2}
                     >
-                        {
-                            pokemon ?
-                                <>
-                                    <img id="pokemon-img" data-testid="pokemon-img" src={pokemon?.sprites?.front_default} alt={pokemon?.name} />
-                                    <Typography variant="body1">#{pokemon?.order}</Typography>
-                                </>
-                            :   <Typography variant="body1">Please, submit a pokémon!</Typography>
-                        }
+                        {renderPokedexDisplay(pokemon)}
                     </Box>
                     {
                         pokemon && renderPokemonData(pokemon)
                     }
                 </Paper>
-                <Typography variant="h6" style={{fontStyle: 'italic'}}>
-                    { pokemonList && `There are ${pokemonList.length} pokémon! Wow!`}
+                <Typography variant="h6" style={{fontStyle: 'italic'}} m={2} data-testid="pokedex-numbers">
+                    { pokemonAutocompleteOptions && `There are ${pokemonAutocompleteOptions.length} pokémon! Wow!`}
                 </Typography>
             </Box>
         </Container>
