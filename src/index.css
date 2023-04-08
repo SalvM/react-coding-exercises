@@ -48,3 +48,19 @@ code {
   background-color: rgb(215, 229, 250);
   cursor: pointer;
 }
+.todo_list_item {
+  box-shadow: 0px 2px 4px #ccc;
+  padding: 4px 8px;
+  margin: 4px;
+  border-radius: 2px;
+}
+.todo_list_item p {
+  display: flex;
+  flex: 1;
+}
+.todo_list_item.checked {
+  border: 3px solid lightgreen;
+  border-right-width: 0;
+  border-bottom-width: 0;
+  border-top-left-radius: 8px;
+}
