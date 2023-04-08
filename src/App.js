@@ -3,10 +3,11 @@ import Pokedex from './exe/Pokedex';
 import Tris from './exe/Tris';
 import { AutocompletePage } from './exe/CustomAutocomplete';
 import TodoPage from './exe/Todo';
+import ChessGame from './exe/Chess';
 function App() {
   return (
     <div className="App">
-      <TodoPage />
+      <ChessGame />
     </div>
   );
 }
