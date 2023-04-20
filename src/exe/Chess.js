@@ -2,6 +2,14 @@ import React, {useReducer, useState} from "react";
 import { Box, Container, ListItem } from "@mui/material";
 import ChessPiece from "../components/ChessPiece";
 
+const createPieceObject = ({type}) => ({
+    canMove: false,
+    clickable: false,
+    color: false,
+    selected: false,
+    type,
+});
+
 const initialGridStatus = [
     ['R','P','','','','','P','R'],
     ['N','P','','','','','P','N'],
@@ -16,12 +24,13 @@ const initialGridStatus = [
 const initialGameStatus = {
     grid: initialGridStatus,
     initiative: '', // '', 'B', 'W'
-
+    selectedPiece: [-1 , -1],
 }
 
-const gridReducer = (action, state) => {
+const gridReducer = (state, action) => {
     switch (action.type) {
-
+        case 'select_piece':
+            return {...state, selectedPiece: [action.payload.x, action.payload.y]}
         default: return state;
     }
 };
@@ -29,6 +38,11 @@ const gridReducer = (action, state) => {
 const ChessGame = () => {
     const [gameStatus, dispatcher] = useReducer(gridReducer, initialGameStatus);
     console.group(gameStatus)
+
+    const pieceIsSelected = (x, y) => (x === gameStatus.selectedPiece[0] && y === gameStatus.selectedPiece[1]);
+    const pieceSelection = (x, y) => {
+        dispatcher({type: 'select_piece', payload: {x, y}});
+    }
 
     return (
         <Container style={{flex: 1}}>
@@ -40,7 +54,7 @@ const ChessGame = () => {
                                 {
                                     col.map((row, x) => {
                                         return (
-                                                <ChessPiece x={x} y={y} type={row} key={`${y}_${x}`} />
+                                                <ChessPiece x={x} y={y} type={row} key={`${y}_${x}`} selected={pieceIsSelected(x, y)} onClick={pieceSelection} />
                                         );
                                     })
                                 }

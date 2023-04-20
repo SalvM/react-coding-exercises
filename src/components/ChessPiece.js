@@ -6,17 +6,25 @@ class ChessPiece extends React.Component {
         super(props);
         this.state = {
             canMove: props.canMove,
+            clickable: props.clickable,
             color: props.color,
+            onClick: props.onClick,
             selected: props.selected,
             type: props.type, // P = Pawn, ...
         }
     }
     cellColor() {
+        if (this.selected) return '#003333';
+        if (this.clickable) return '#003399';
         return (this.props.x + this.props.y) % 2 === 0 ? '#333' : '#ccc';
+    }
+    pieceClick = () => {
+        console.group(this.state)
+        this.state.onClick(this.props.x, this.props.y)
     }
     render() {
         return (
-            <Box style={{height: 32, width: 32, padding: 8, backgroundColor: this.cellColor()}}>
+            <Box style={{height: 32, width: 32, padding: 8, backgroundColor: this.cellColor()}} onClick={() => this.pieceClick()}>
                 <p style={{color: this.props.color, margin: 0}}>{this.state.type}</p>
             </Box>
         )
